@@ -130,8 +130,89 @@ Data.prototype = {
       delete owner[this.expando];
     }
   },
-  hasDate(owner){
+  hasDate(owner) {
     let cache = owner[this.expando];
     return cache !== undefined && !isEmptyObject(cache);
+  },
+};
+const rheaders = /^(.*?):[ \t]*([^\r\n]*)$/gm; //匹配请求头
+// ajaxSetup  为ajax对象添加一些默认属性,如果没有设置,则使用默认值
+const ajax = function (url, options) {
+  //只传入一个对象时,默认为options
+  if (typeof url === "object") {
+    options = url;
+    url = undefined;
   }
+  options = options || {};
+  let transport, //这个是什么?
+    cacheURL, //缓存的url
+    responseHeadersString, //响应头
+    responseHeaders, //响应头对象
+    timeoutTimer, //超时计时器
+    urlAnchor, //url锚点
+    completed, //是否完成
+    fireGlobals, //是否触发全局事件
+    i, //循环变量
+    uncached, //是否未缓存
+    s = jQuery.ajaxSetup({}, options), //获取默认值
+    callbackContext = s.context || s, //回调函数上下文
+    globalEventContext = s.context && (callbackContext.nodeType || callbackContext.jquery) ? jQuery(callbackContext) : jQuery.event, //全局事件上下文
+    deferred = jQuery.Deferred(), //延迟对象,类似于promise
+    completeDeferred = jQuery.Callbacks("once memory"), //完成回调
+    statusCode = s.statusCode || {}, //状态码
+    requestHeaders = {}, //请求头
+    requestHeadersNames = {}, //请求头名称
+    strAbort = "canceled", //中断
+    jqXHR = {
+      readyState: 0, //状态码
+      getResponseHeader: function (key) {
+        //获取响应头
+        let match;
+        if (completed) {
+          if (!responseHeaders) {
+            responseHeaders = {};
+            while ((match = rheaders.exec(responseHeadersString))) {
+              responseHeaders[match[1].toLowerCase()] = match[2];
+            }
+          }
+          match = responseHeaders[key.toLowerCase()];
+        }
+        return match == null ? null : match.join(",");
+      },
+      getAllResponseHeaders: function () {
+        //获取所有响应头
+        return completed ? responseHeadersString : null;
+      },
+      //用于设置响应头
+      setRequestHeader: function (name, value) {
+        if (completed == null) {
+          name = requestHeadersNames[name.toLowerCase()] = requestHeadersNames[name.toLowerCase()] || name;
+          requestHeaders[name] = value;
+        }
+        return this;
+      },
+      overrideMimeType: function (type) {
+        //重写mime类型
+        if (completed == null) {
+          s.mimeType = type;
+        }
+        return this;
+      },
+      statusCode: function (map) {
+        //设置状态码
+        let code;
+        if (map) {
+          if (completed) {
+            //执行完成
+            jqXHR.always(map[jqXHR.status]);
+          } else {
+            //执行未完成
+            for (code in map) {
+              statusCode[code] = [statusCode[code], map[code]];
+            }
+          }
+        }
+        return this;
+      }
+    };
 };

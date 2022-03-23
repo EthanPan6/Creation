@@ -8846,7 +8846,7 @@
         responseHeaders,
         // timeout handle
         timeoutTimer,
-        // Url cleanup var
+        // Url cleanup var 
         urlAnchor,
         // Request state (becomes false upon send and true upon completion)
         completed,
