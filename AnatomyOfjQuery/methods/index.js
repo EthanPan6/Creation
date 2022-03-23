@@ -213,6 +213,8 @@ const ajax = function (url, options) {
           }
         }
         return this;
-      }
+      },
+      abort: function (statusText) {}
+
     };
 };
